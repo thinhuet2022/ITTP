@@ -1,2 +1,5 @@
-# ITTF
-an application that helps converting from image to english text then from english text to vietnamese and transform it into a pdf file in the end.
+# ITTP
+an application that helps:
+- converting from image to english text
+- translate from english text to vietnamese
+- transform it into a pdf file.
