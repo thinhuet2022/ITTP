@@ -21,10 +21,15 @@
     "@iamtraction/google-translate": "github:iamtraction/google-translate",
     "amqplib": "^0.10.4",
     "express": "^4.21.1",
+    "fontkit": "^2.0.4",
     "google-translate-api": "^0.1.1",
     "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
     "pdfkit": "^0.15.1",
+    "react-toastify": "^10.0.6",
     "tesseract.js": "^5.1.1"
+  },
+  "devDependencies": {
+    "cors": "^2.8.5"
   }
 }
