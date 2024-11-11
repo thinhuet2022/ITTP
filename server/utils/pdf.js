@@ -3,8 +3,8 @@ const fs = require('fs');
 const amqp = require('amqplib');
 
 
-const OUT_FILE = '/home/thinhnguyen/Desktop/ITTP/server/output/output' +Date.now() +'.pdf';
-const FONT_PATH = '/home/thinhnguyen/Desktop/ITTP/server/font/Roboto-Bold.ttf';
+const OUT_FILE = '../output/output' +Date.now() +'.pdf';
+const FONT_PATH = '../font/Roboto-Bold.ttf';
 
 async function createPDF() {
     console.log('Đang kết nối tới RabbitMQ Server');

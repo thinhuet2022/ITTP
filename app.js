@@ -3,7 +3,7 @@ const amqp = require('amqplib');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-
+const Pipeline = require('./server/utils/Pipeline.js');
 const app = express();
 const port = 5000;
 
@@ -15,36 +15,26 @@ const storage = multer.diskStorage({
         cb(null, 'uploads/');
     },
     filename: function (req, file, cb) {
-        // Use original file name or customize as needed
         cb(null, Date.now() + path.extname(file.originalname));
     }
 });
 
 const upload = multer({ storage: storage });
+const pipeLine = new Pipeline();
 
-
-app.post('/upload', upload.single('image'),async (req, res) => {
-    const connection = await amqp.connect('amqp://127.0.0.1');
-    const channel = await connection.createChannel();
-
-    console.log('Đã kết nối tới RabbitMQ Server');
-
+app.post('/upload', upload.array('images'),async (req, res) => {
     try {
-        console.log('File uploaded:', req.file);
-        res.json({ message: 'Image uploaded successfully', file: req.file });
+        const files = req.files;
+        const tasks = files.map(file => pipeLine.process(file));
+        for (task of tasks) {
+            await task;
+        }
+        res.status(200).json({ message: 'Upload thành công!', files });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error uploading image' });
+        res.status(500).json({ message: 'Có lỗi xảy ra khi upload ảnh', error });
+        console.error("Error 500: ", error);
     }
-
-    const queueOCR = 'imageToText';
-    await channel.assertQueue(queueOCR, {durable: true});
-    try {
-        console.log('Đang gửi tin nhắn tới hàng đợi OCR');
-        channel.sendToQueue(queueOCR, Buffer.from(JSON.stringify(path.resolve(req.file.path))), {persistent: true});
-    } catch (error) {
-        console.log('Lỗi khi gửi tin nhắn tới hàng đợi OCR:', error);
-    }
+    
 });
 
 app.listen(port, () => {

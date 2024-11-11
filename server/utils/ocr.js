@@ -8,7 +8,7 @@ async function imageToText() {
         const channel = await connection.createChannel();
         console.log('Đã kết nối tới RabbitMQ Server');
 
-        const queueOCR = 'imageToText';
+        const queueOCR = 'ocr';
         const queueTranslate = 'Translate';
 
         await channel.assertQueue(queueOCR, {durable: true});
