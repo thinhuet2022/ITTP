@@ -8,6 +8,7 @@ const app = express();
 const port = 5000;
 const fs = require('fs');
 const archiver = require('archiver');
+const chokidar = require('chokidar')
 
 app.use(cors());
 
@@ -22,8 +23,13 @@ const storage = multer.diskStorage({
     }
 });
 
+function countPDFFiles() {
+    return fs.readdirSync(OUTPUT_PATH).filter(file => path.extname(file) === '.pdf').length;
+}
+
 const upload = multer({ storage: storage });
 const pipeLine = new Pipeline();
+const watcher = chokidar.watch(OUTPUT_PATH);
 
 app.post('/upload', upload.array('images'),async (req, res) => {
     const files = req.files;
@@ -32,9 +38,7 @@ app.post('/upload', upload.array('images'),async (req, res) => {
     }
     try {
         const tasks = files.map(file => pipeLine.process(file));
-        for (task of tasks) {
-            await task;
-        }
+        await Promise.all(tasks);
     } catch (error) {
         res.status(500).json({ message: 'Có lỗi xảy ra khi upload ảnh', error });
         console.error("Error 500: ", error);
@@ -51,25 +55,39 @@ app.post('/upload', upload.array('images'),async (req, res) => {
 
     archive.pipe(output);
 
-    files.forEach((file) => {
-        const pdfName = path.parse(file.originalname).name + '.pdf';
-        const filePath = path.join(OUTPUT_PATH, pdfName);
-        archive.file(filePath, { name: pdfName });
-        fs.unlinkSync(filePath);
-    });
 
-    archive.finalize();
+    watcher.on('add', filePath => {
+        const fileName = path.basename(filePath);
+        if (path.extname(filePath) === '.pdf') {
+            console.log(`File PDF mới được thêm: ${filePath}`);
+            archive.file(filePath, {name: fileName});
 
-    output.on('close', () => {
-        //files.forEach((file) => fs.unlinkSync(file.path));
-        res.send(`
-            <html>
-              <body>
-                <h2>Upload Successful!</h2>
-                <a href="/download" download><button>Download Zip</button></a>
-              </body>
-            </html>
-        `);
+            const pdfCount = countPDFFiles();
+            console.log(`Số lượng file PDF hiện tại: ${pdfCount}`);
+
+            if (pdfCount >= files.length) {
+                console.log('Đủ số lượng file PDF cần thiết!');
+                archive.finalize();
+                
+                output.on('close', () => {
+                    res.send(`
+                        <html>
+                          <body>
+                            <h2>Upload Successful!</h2>
+                            <a href="/download" download><button>Download Zip</button></a>
+                          </body>
+                        </html>
+                    `);
+                    files.forEach((file) => fs.unlinkSync(file.path));
+                    files.forEach((file) => {
+                        const pdfName = path.parse(file.originalname).name + '.pdf';
+                        const filePath = path.join(OUTPUT_PATH, pdfName);
+                        fs.unlinkSync(filePath);
+                    });
+                    watcher.close(); 
+                });
+            }
+        }
     });
 });
 

@@ -29,27 +29,32 @@ class IntermediateFilter extends Filter {
     }
 
     async run() {
-        //await this.connectPipes();
-        this.channel.consume(this.inPipe, async (message) => {
-
-            const inputData = this.receive(message);
-            console.log("Received message from " + this.inPipe);
-            try {
-                
-                const outputData = await this.process(inputData);
-                console.log("Sending to " + this.outPipe);
-                this.forward(outputData);
-
-            } catch (error) {
-                console.error('Lỗi khi gửi tin nhắn tới hàng đợi ' + this.outPipe, error);
-            }
-            if (this.channel && this.channel.connection && this.channel.connection.stream.readable) {
-                this.channel.ack(message);
-            } else {
-                console.error('Channel is not open or already closed');
-            }
-        }, {noAck: false});
+        return new Promise((resolve, reject) => {
+            this.channel.consume(this.inPipe, async (message) => {
+                const inputData = this.receive(message);
+                console.log("Received message from " + this.inPipe);
+    
+                try {
+                    const outputData = await this.process(inputData);
+                    console.log("Sending to " + this.outPipe);
+                    this.forward(outputData);
+    
+                    // Xác nhận xử lý thành công message đầu tiên và tiếp tục
+                    resolve();
+                } catch (error) {
+                    console.error('Lỗi khi gửi tin nhắn tới hàng đợi ' + this.outPipe, error);
+                    reject(error); // Reject nếu gặp lỗi
+                }
+    
+                if (this.channel && this.channel.connection && this.channel.connection.stream.readable) {
+                    this.channel.ack(message);
+                } else {
+                    console.error('Channel is not open or already closed');
+                }
+            }, { noAck: false });
+        });
     }
+    
 }
 
 module.exports = IntermediateFilter;

@@ -22,9 +22,7 @@ class Pipeline {
         this.sourceFilter.setData(data);
         try {
             const tasks = this.filterList.map(filter => filter.run());
-            for (task of tasks) {
-                await task;
-            }
+            Promise.all(tasks);
         } catch (error) {
             console.error("Error occured in the Pipeline: ", error);
         }

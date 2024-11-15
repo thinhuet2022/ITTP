@@ -21,6 +21,7 @@
     "@iamtraction/google-translate": "github:iamtraction/google-translate",
     "amqplib": "^0.10.4",
     "archiver": "^7.0.1",
+    "chokidar": "^4.0.1",
     "express": "^4.21.1",
     "fontkit": "^2.0.4",
     "google-translate-api": "^2.3.0",

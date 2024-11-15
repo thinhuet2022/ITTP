@@ -26,20 +26,26 @@ class Sink extends Filter {
     }
     
     async run() {
-        this.channel.consume(this.inPipe, async (message) => {
-            const inputData = this.receive(message);
-            try {
-                await this.process(inputData);
-            } catch (error) {
-                console.error('Error occurred at Sink', error);
-            }
-
-            if (this.channel && this.channel.connection && this.channel.connection.stream.readable) {
-                this.channel.ack(message);
-            } else {
-                console.error('Channel is not open or already closed');
-            }
-        }, {noAck: false});
+        return new Promise((resolve, reject) => {
+            this.channel.consume(this.inPipe, async (message) => {
+                const inputData = this.receive(message);
+                console.log("Received message from " + this.inPipe);
+    
+                try {
+                    const outputData = await this.process(inputData);
+                    resolve();
+                } catch (error) {
+                    console.error('Error occurred at Sink', error.message);
+                    reject(error);
+                }
+    
+                if (this.channel && this.channel.connection && this.channel.connection.stream.readable) {
+                    this.channel.ack(message);
+                } else {
+                    console.error('Channel is not open or already closed');
+                }
+            }, { noAck: false });
+        });
     }
 }
 
