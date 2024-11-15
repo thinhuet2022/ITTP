@@ -26,10 +26,6 @@ class Pipeline {
         } catch (error) {
             console.error("Error occured in the Pipeline: ", error);
         }
-        /*unlink(path.resolve(data.path), (err) => {
-            //if (err) console.error('Error deleting file:', err);
-            //else console.log('File deleted:', data);
-        });*/
     }
 }
 
