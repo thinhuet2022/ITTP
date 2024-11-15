@@ -39,11 +39,10 @@ class IntermediateFilter extends Filter {
                     console.log("Sending to " + this.outPipe);
                     this.forward(outputData);
     
-                    // Xác nhận xử lý thành công message đầu tiên và tiếp tục
                     resolve();
                 } catch (error) {
                     console.error('Lỗi khi gửi tin nhắn tới hàng đợi ' + this.outPipe, error);
-                    reject(error); // Reject nếu gặp lỗi
+                    reject(error); 
                 }
     
                 if (this.channel && this.channel.connection && this.channel.connection.stream.readable) {
