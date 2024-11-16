@@ -4,7 +4,8 @@
   "description": "an application that helps: - converting from image to english text - translate from english text to vietnamese - transform it into a pdf file.",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "delete": "node server/utils/deleteQueue.js"
   },
   "repository": {
     "type": "git",
@@ -29,7 +30,8 @@
     "node-fetch": "^3.3.2",
     "pdfkit": "^0.15.1",
     "react-toastify": "^10.0.6",
-    "tesseract.js": "^5.1.1"
+    "tesseract.js": "^5.1.1",
+    "unzipper": "^0.12.3"
   },
   "devDependencies": {
     "cors": "^2.8.5"

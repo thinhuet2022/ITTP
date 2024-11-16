@@ -3,12 +3,12 @@ const amqp = require('amqplib');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-const Pipeline = require('./server/PipesAndFilters/Pipeline.js');
 const app = express();
 const port = 5000;
 const fs = require('fs');
 const archiver = require('archiver');
 const chokidar = require('chokidar')
+const unzipper = require('unzipper');
 
 app.use(cors());
 
@@ -27,23 +27,53 @@ function countPDFFiles() {
     return fs.readdirSync(OUTPUT_PATH).filter(file => path.extname(file) === '.pdf').length;
 }
 
-const upload = multer({ storage: storage });
-const pipeLine = new Pipeline();
+const upload = multer({storage: storage});
 const watcher = chokidar.watch(OUTPUT_PATH);
 
-app.post('/upload', upload.array('images'),async (req, res) => {
-    const files = req.files;
-    if (!files || files.length === 0) {
-        return res.status(400).send('No files were uploaded.');
-    }
+async function extractZip(zipFilePath, outputFolder) {
+    return fs.createReadStream(zipFilePath)
+        .pipe(unzipper.Extract({path: outputFolder}))
+        .promise();
+}
+// Hàm duyệt qua tất cả file trong thư mục và các thư mục con
+const getAllFiles = (dirPath, arrayOfFiles = []) => {
+    const files = fs.readdirSync(dirPath);
+
+    files.forEach((file) => {
+        const fullPath = path.join(dirPath, file);
+        if (fs.statSync(fullPath).isDirectory()) {
+            // Nếu là thư mục, gọi đệ quy
+            getAllFiles(fullPath, arrayOfFiles);
+        } else {
+            // Nếu là file, thêm vào mảng
+            arrayOfFiles.push(fullPath);
+        }
+    });
+
+    return arrayOfFiles;
+};
+app.post('/upload', upload.single('file'), async (req, res) => {
+
+    const zipFilePath = req.file.path;
+    console.log(zipFilePath);
+    await extractZip(zipFilePath, 'uploads/');
+    const imageFiles = getAllFiles('uploads/').filter(file => /\.(jpg|jpeg|png)$/i.test(file));
+    console.log(imageFiles);
+    const connection = await amqp.connect('amqp://localhost');
+    const channel = await connection.createChannel();
+    channel.assertQueue('ocr', {durable: true});
     try {
-        const tasks = files.map(file => pipeLine.process(file));
-        await Promise.all(tasks);
+        for (const imageFile of imageFiles) {
+            const filePath = path.join(imageFile);
+            const output = {fileName: imageFile, absolutePath: path.resolve(filePath)};
+            channel.sendToQueue('ocr', Buffer.from(JSON.stringify(output)));
+            console.log(`Sent to queue: ${filePath}`);
+        }
     } catch (error) {
-        res.status(500).json({ message: 'Có lỗi xảy ra khi upload ảnh', error });
+        res.status(500).json({message: 'Có lỗi xảy ra khi upload ảnh', error});
         console.error("Error 500: ", error);
     }
-    
+
     const zipPath = path.join(__dirname, "server", 'output', 'images.zip');
     const output = fs.createWriteStream(zipPath);
     const archive = archiver('zip');
@@ -65,31 +95,25 @@ app.post('/upload', upload.array('images'),async (req, res) => {
             const pdfCount = countPDFFiles();
             console.log(`Số lượng file PDF hiện tại: ${pdfCount}`);
 
-            if (pdfCount >= files.length) {
+            if (pdfCount >= imageFiles.length) {
                 console.log('Đủ số lượng file PDF cần thiết!');
                 archive.finalize();
-                
+
                 output.on('close', () => {
-                    res.send(`
-                        <html>
-                          <body>
-                            <h2>Upload Successful!</h2>
-                            <a href="/download" download><button>Download Zip</button></a>
-                          </body>
-                        </html>
-                    `);
-                    files.forEach((file) => fs.unlinkSync(file.path));
-                    files.forEach((file) => {
-                        const pdfName = path.parse(file.originalname).name + '.pdf';
-                        const filePath = path.join(OUTPUT_PATH, pdfName);
-                        fs.unlinkSync(filePath);
-                    });
-                    watcher.close(); 
+                    res.status(200).json({message: 'ZIP file created', fileName: 'images.zip'});
+                    // files.forEach((file) => fs.unlinkSync(file.path));
+                    // files.forEach((file) => {
+                    //     const pdfName = path.parse(file.originalname).name + '.pdf';
+                    //     const filePath = path.join(OUTPUT_PATH, pdfName);
+                    //     fs.unlinkSync(filePath);
+                    // });
+                    watcher.close();
                 });
             }
         }
     });
 });
+
 
 app.get('/download', (req, res) => {
     const zipPath = path.join(__dirname, 'server', 'output', 'images.zip');

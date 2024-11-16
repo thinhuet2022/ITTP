@@ -9,8 +9,8 @@ class PdfFilter extends Sink {
         super("pdf");
     }
     /**
-     * 
-     * @param {object} data - {fileName, translatedText} 
+     *
+     * @param {object} data - {fileName, translatedText}
      */
     async process(data) {
         const generatedPDFText = data.translatedText;
@@ -29,5 +29,9 @@ class PdfFilter extends Sink {
         }
     }
 }
-
-module.exports = PdfFilter;
+async function run() {
+    const pdfFilter = new PdfFilter();
+    await pdfFilter.connectPipes();
+    await pdfFilter.run();
+}
+run().then(r => console.log('PdfFilter is running'));

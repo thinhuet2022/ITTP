@@ -20,5 +20,9 @@ class OcrFilter extends IntermediateFilter {
         return Buffer.from(JSON.stringify(output));
     }
 }
-
-module.exports = OcrFilter;
+async function run() {
+    const ocrFilter = new OcrFilter();
+    await ocrFilter.connectPipes()
+    await ocrFilter.run();
+}
+run().then(r => console.log('OcrFilter is running'));
