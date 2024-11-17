@@ -4,11 +4,14 @@ class Sink extends Filter {
     /**
      *
      * @param {string} inPipe - tên input pipe
+     * @param prefetchNumber
      */
-    constructor(inPipe) {
+    constructor(inPipe, prefetchNumber = 1) {
         super();
         this.pipes = [inPipe];
         this.inPipe = inPipe;
+        this.numberOfTask = 0;
+        this.prefetchNumber = prefetchNumber;
     }
 
     receive(message) {
@@ -31,6 +34,8 @@ class Sink extends Filter {
             console.log("Received message from " + this.inPipe);
             try {
                 const outputData = await this.process(inputData);
+                this.numberOfTask++;
+                console.log('Number of task completed: ', this.numberOfTask);
             } catch (error) {
                 console.error('Error occurred at Sink', error.message);
             }

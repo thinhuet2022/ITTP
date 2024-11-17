@@ -4,8 +4,10 @@
   "description": "an application that helps: - converting from image to english text - translate from english text to vietnamese - transform it into a pdf file.",
   "main": "app.js",
   "scripts": {
+    "start": "pm2 start pm2.config.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "delete": "node server/utils/deleteQueue.js"
+    "purge": "node server/utils/deleteQueue.js",
+    "delete": "pm2 delete all"
   },
   "repository": {
     "type": "git",
@@ -24,16 +26,15 @@
     "archiver": "^7.0.1",
     "chokidar": "^4.0.1",
     "express": "^4.21.1",
-    "fontkit": "^2.0.4",
-    "google-translate-api": "^2.3.0",
     "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
     "pdfkit": "^0.15.1",
     "react-toastify": "^10.0.6",
     "tesseract.js": "^5.1.1",
-    "unzipper": "^0.12.3"
+    "pm2": "^5.4.3"
   },
   "devDependencies": {
     "cors": "^2.8.5"
+
   }
 }

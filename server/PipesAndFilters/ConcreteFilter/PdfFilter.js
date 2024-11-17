@@ -6,7 +6,7 @@ const FONT_PATH = './server/font/Roboto-Bold.ttf';
 
 class PdfFilter extends Sink {
     constructor() {
-        super("pdf");
+        super("pdf",3);
     }
     /**
      *
@@ -14,14 +14,15 @@ class PdfFilter extends Sink {
      */
     async process(data) {
         const generatedPDFText = data.translatedText;
+        // console.log('Generated PDF text:', generatedPDFText);
         const fileNameWithoutExtension = path.parse(data.fileName).name;
         const outFile = './server/output/' + fileNameWithoutExtension + '.pdf';
         try {
             const doc = new PDFDocument();
             doc.pipe(fs.createWriteStream(outFile));
-            doc.fontSize(16)
+            doc.fontSize(10)
                 .font(FONT_PATH)
-                .text(generatedPDFText, 100, 100);
+                .text(generatedPDFText, 50, 50);
             doc.end();
             console.log('PDF created');
         } catch (error) {

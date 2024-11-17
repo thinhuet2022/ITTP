@@ -6,12 +6,15 @@ class IntermediateFilter extends Filter {
      *
      * @param {string} inPipe
      * @param {string} outPipe
+     * @param prefetchNumber
      */
-    constructor(inPipe, outPipe) {
+    constructor(inPipe, outPipe, prefetchNumber = 1) {
         super();
         this.pipes = [inPipe, outPipe];
         this.inPipe = inPipe;
         this.outPipe = outPipe;
+        this.numberOfTask = 0;
+        this.prefetchNumber = prefetchNumber;
     }
 
     receive(message) {
@@ -25,7 +28,7 @@ class IntermediateFilter extends Filter {
     }
 
     forward(data) {
-        this.channel.sendToQueue(this.outPipe, data, {persistent: true});
+        this.channel.sendToQueue(this.outPipe, data);
     }
 
     run() {
@@ -35,6 +38,8 @@ class IntermediateFilter extends Filter {
 
             try {
                 const outputData = await this.process(inputData);
+                this.numberOfTask++;
+                console.log('Number of task completed: ', this.numberOfTask);
                 console.log("Sending to " + this.outPipe);
                 this.forward(outputData);
             } catch (error) {

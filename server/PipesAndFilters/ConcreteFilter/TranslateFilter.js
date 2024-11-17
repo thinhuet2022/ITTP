@@ -3,7 +3,7 @@ const translate = require('@iamtraction/google-translate');
 
 class TranslateFilter extends IntermediateFilter {
     constructor() {
-        super("translate", "pdf");
+        super("translate", "pdf",3);
     }
     /**
      * 
