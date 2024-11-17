@@ -3,7 +3,7 @@ const translate = require('@iamtraction/google-translate');
 
 class TranslateFilter extends IntermediateFilter {
     constructor() {
-        super("translate", "pdf");
+        super("translate", "pdf",3);
     }
     /**
      * 
@@ -16,5 +16,9 @@ class TranslateFilter extends IntermediateFilter {
         return Buffer.from(JSON.stringify(output));
     }
 }
-
-module.exports = TranslateFilter;
+async function run() {
+    const translateFilter = new TranslateFilter();
+    await translateFilter.connectPipes();
+    await translateFilter.run();
+}
+run().then(r => console.log('TranslateFilter is running'));

@@ -7,7 +7,7 @@ function delay(ms) {
 
 class OcrFilter extends IntermediateFilter {
     constructor() {
-        super("ocr", "translate");
+        super("ocr", "translate",3);
     }
     /**
      * 
@@ -17,8 +17,13 @@ class OcrFilter extends IntermediateFilter {
         const {data: {text}} = await ocr.recognize(data.absolutePath, 'eng');
         const output = {    fileName: data.fileName,
                             englishText: text}
+        // console.log('Number of recognized text',numberOfRecognizedText);
         return Buffer.from(JSON.stringify(output));
     }
 }
-
-module.exports = OcrFilter;
+async function run() {
+    const ocrFilter = new OcrFilter();
+    await ocrFilter.connectPipes()
+    await ocrFilter.run();
+}
+run().then(r => console.log('OcrFilter is running'));
