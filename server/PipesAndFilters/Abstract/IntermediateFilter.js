@@ -19,8 +19,7 @@ class IntermediateFilter extends Filter {
 
     receive(message) {
         try {
-            const ret = JSON.parse(message.content.toString());
-            return ret;
+            return JSON.parse(message.content.toString());
         } catch (error) {
             console.error("Error occured when reading message from " + this.inPipe + ": ", error);
         }
