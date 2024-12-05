@@ -1,29 +1,47 @@
 const IntermediateFilter = require('../Abstract/IntermediateFilter');
 const ocr = require('tesseract.js');
 
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-} 
-
 class OcrFilter extends IntermediateFilter {
     constructor() {
-        super("ocr", "translate",3);
+        super("ocr", "translate", 3); // Số lượng prefetch
     }
+
     /**
-     * 
-     * @param {object} data - {fileName, absolutePath}
+     *
+     * @param {object} data - {fileName, buffer}
      */
     async process(data) {
-        const {data: {text}} = await ocr.recognize(data.absolutePath, 'eng');
-        const output = {    fileName: data.fileName,
-                            englishText: text}
-        // console.log('Number of recognized text',numberOfRecognizedText);
-        return Buffer.from(JSON.stringify(output));
+        try {
+            // Kiểm tra dữ liệu buffer trước khi xử lý
+            if (!data.buffer || data.buffer.length === 0) {
+                throw new Error('Invalid image buffer received');
+            }
+
+            console.log('Processing image:', data.fileName);
+            console.log('Buffer length:', data.buffer.length);
+
+            // Nhận diện văn bản từ ảnh
+            const { data: { text } } = await ocr.recognize(data.buffer.data, 'eng');
+
+            const output = {
+                fileName: data.fileName,
+                englishText: text
+            };
+
+            return Buffer.from(JSON.stringify(output));
+        } catch (error) {
+            console.error('Error during OCR processing:', error);
+            throw error;  // Đảm bảo lỗi được ném lại để quản lý tiếp
+        }
     }
 }
+
 async function run() {
     const ocrFilter = new OcrFilter();
-    await ocrFilter.connectPipes()
+    await ocrFilter.connectPipes();
     await ocrFilter.run();
 }
-run().then(r => console.log('OcrFilter is running'));
+
+run().then(() => console.log('OcrFilter is running')).catch((error) => {
+    console.error('OcrFilter failed to start:', error);
+});

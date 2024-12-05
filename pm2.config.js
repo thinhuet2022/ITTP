@@ -3,7 +3,7 @@ module.exports = {
         {
             name: "OcrFilter",
             script: "./server/PipesAndFilters/ConcreteFilter/OcrFilter.js",
-            instances: 5, // Chạy 3 instance song song
+            instances: 10, // Chạy 3 instance song song
         },
         {
             name: "TranslateFilter",

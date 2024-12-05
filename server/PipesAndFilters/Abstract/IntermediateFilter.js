@@ -19,7 +19,9 @@ class IntermediateFilter extends Filter {
 
     receive(message) {
         try {
-            return JSON.parse(message.content.toString());
+            const data = JSON.parse(message.content.toString());
+            console.log('Received message:', data); // Kiểm tra xem dữ liệu nhận được có đúng định dạng không
+            return data;
         } catch (error) {
             console.error("Error occured when reading message from " + this.inPipe + ": ", error);
         }

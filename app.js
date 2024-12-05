@@ -14,11 +14,8 @@ app.use(cors());
 const OUTPUT_PATH = path.resolve("server/output");
 const UPLOAD_PATH = path.resolve("uploads");
 
-// Cấu hình multer để lưu file
-const storage = multer.diskStorage({
-    destination: (_, __, cb) => cb(null, UPLOAD_PATH),
-    filename: (_, file, cb) => cb(null, file.originalname),
-});
+// Cấu hình multer để lưu file vào RAM (memory)
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // Hàm đọc tất cả file trong thư mục (đệ quy, bất đồng bộ)
@@ -55,12 +52,17 @@ app.post('/upload', upload.array('file'), async (req, res) => {
     try {
         await Promise.all(
             imageFiles.map((imageFile) => {
+                console.log(`Received file: ${imageFile.originalname}`);
+                console.log(`Buffer length: ${imageFile.buffer.length}`);
                 const output = {
                     fileName: imageFile.originalname,
-                    absolutePath: path.resolve(imageFile.path),
+                    buffer: imageFile.buffer,  // Dữ liệu ảnh được lưu trong RAM (buffer)
                 };
+                if (!imageFile.buffer || imageFile.buffer.length === 0) {
+                    throw new Error('Invalid image buffer');
+                }
                 channel.sendToQueue('ocr', Buffer.from(JSON.stringify(output)));
-                console.log(`Sent to queue: ${imageFile.path}`);
+                console.log(`Sent to queue: ${imageFile.originalname}`);
             })
         );
 
@@ -74,10 +76,8 @@ app.post('/upload', upload.array('file'), async (req, res) => {
 
                 if (pdfCount === imageFiles.length) {
                     console.log('All PDFs processed!');
-                    await fs.rm(UPLOAD_PATH, { recursive: true, force: true });
-                    await fs.mkdir(UPLOAD_PATH);
                     const endTime = process.hrtime(startTime);
-                    console.log(`Thời gian cần để chạy 1 job là: ${endTime[0]}s ${endTime[1]/1e6}ms `)
+                    console.log(`Thời gian cần để chạy 1 job là: ${endTime[0]}s ${endTime[1] / 1e6}ms `);
                     res.status(200).json({ message: 'Processing completed. Ready to download.' });
                     watcher.close();
                 }
