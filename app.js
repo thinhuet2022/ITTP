@@ -10,6 +10,7 @@ const chokidar = require('chokidar');
 const app = express();
 const port = 5000;
 app.use(cors());
+const BATCH_SIZE = 1;
 
 const OUTPUT_PATH = path.resolve("server/output");
 const UPLOAD_PATH = path.resolve("uploads");
@@ -50,21 +51,44 @@ app.post('/upload', upload.array('file'), async (req, res) => {
     await channel.assertQueue('ocr', { durable: true });
 
     try {
-        await Promise.all(
-            imageFiles.map((imageFile) => {
-                console.log(`Received file: ${imageFile.originalname}`);
-                console.log(`Buffer length: ${imageFile.buffer.length}`);
-                const output = {
-                    fileName: imageFile.originalname,
-                    buffer: imageFile.buffer,  // Dữ liệu ảnh được lưu trong RAM (buffer)
-                };
+        // Gom nhóm ảnh thành các batch
+        const batches = [];
+        for (let i = 0; i < imageFiles.length; i += BATCH_SIZE) {
+            const batch = imageFiles.slice(i, i + BATCH_SIZE).map((imageFile) => {
                 if (!imageFile.buffer || imageFile.buffer.length === 0) {
-                    throw new Error('Invalid image buffer');
+                    throw new Error(`Invalid image buffer for file: ${imageFile.originalname}`);
                 }
-                channel.sendToQueue('ocr', Buffer.from(JSON.stringify(output)));
-                console.log(`Sent to queue: ${imageFile.originalname}`);
+                console.log(`Preparing file: ${imageFile.originalname}`);
+                return {
+                    fileName: imageFile.originalname,
+                    buffer: imageFile.buffer, // Dữ liệu ảnh được lưu trong RAM (buffer)
+                };
+            });
+            batches.push(batch);
+        }
+        // Gửi từng batch vào queue
+        await Promise.all(
+            batches.map((batch, index) => {
+                console.log(`Sending batch ${index + 1} to queue...`);
+                const batchPayload = { batchIndex: index + 1, images: batch }; // Đính kèm thông tin lô
+                channel.sendToQueue('ocr', Buffer.from(JSON.stringify(batchPayload)));
             })
         );
+        // await Promise.all(
+        //     imageFiles.map((imageFile) => {
+        //         console.log(`Received file: ${imageFile.originalname}`);
+        //         console.log(`Buffer length: ${imageFile.buffer.length}`);
+        //         const output = {
+        //             fileName: imageFile.originalname,
+        //             buffer: imageFile.buffer,  // Dữ liệu ảnh được lưu trong RAM (buffer)
+        //         };
+        //         if (!imageFile.buffer || imageFile.buffer.length === 0) {
+        //             throw new Error('Invalid image buffer');
+        //         }
+        //         channel.sendToQueue('ocr', Buffer.from(JSON.stringify(output)));
+        //         console.log(`Sent to queue: ${imageFile.originalname}`);
+        //     })
+        // );
 
         const watcher = chokidar.watch(OUTPUT_PATH, { ignoreInitial: true });
         let pdfCount = 0;

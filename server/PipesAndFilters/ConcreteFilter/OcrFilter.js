@@ -12,22 +12,36 @@ class OcrFilter extends IntermediateFilter {
      */
     async process(data) {
         try {
-            // Kiểm tra dữ liệu buffer trước khi xử lý
-            if (!data.buffer || data.buffer.length === 0) {
-                throw new Error('Invalid image buffer received');
+            console.log(`Processing batch number: ${data.batchIndex}`);
+            const results = [];
+
+            for ( const image of data.images) {
+                const { data : {text}} = await ocr.recognize(image.buffer.data, 'eng');
+                const output = {
+                    fileName: image.fileName,
+                    englishText: text.trim(),
+                }
+                results.push(output);
             }
-
-            console.log('Processing image:', data.fileName);
-            console.log('Buffer length:', data.buffer.length);
-
-            // Nhận diện văn bản từ ảnh
-            const { data: { text } } = await ocr.recognize(data.buffer.data, 'eng');
-
+            // Kiểm tra dữ liệu buffer trước khi xử lý
+            // if (!data.buffer || data.buffer.length === 0) {
+            //     throw new Error('Invalid image buffer received');
+            // }
+            //
+            // console.log('Processing image:', data.fileName);
+            // console.log('Buffer length:', data.buffer.length);
+            //
+            // // Nhận diện văn bản từ ảnh
+            // const { data: { text } } = await ocr.recognize(data.buffer.data, 'eng');
+            //
+            // const output = {
+            //     fileName: data.fileName,
+            //     englishText: text
+            // };
             const output = {
-                fileName: data.fileName,
-                englishText: text
-            };
-
+                batchIndex:  data.batchIndex,
+                results,
+            }
             return Buffer.from(JSON.stringify(output));
         } catch (error) {
             console.error('Error during OCR processing:', error);

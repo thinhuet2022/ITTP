@@ -6,33 +6,51 @@ const FONT_PATH = './server/font/Roboto-Bold.ttf';
 
 class PdfFilter extends Sink {
     constructor() {
-        super("pdf",3);
+        super("pdf", 3); // Tên queue là "pdf", prefetch là 3
     }
+
     /**
      *
-     * @param {object} data - {fileName, translatedText}
+     * @param {object} data - { batchIndex, translatedResults: [{fileName, translatedText}] }
      */
     async process(data) {
-        const generatedPDFText = data.translatedText;
-        // console.log('Generated PDF text:', generatedPDFText);
-        const fileNameWithoutExtension = path.parse(data.fileName).name;
-        const outFile = './server/output/' + fileNameWithoutExtension + '.pdf';
+        const batchIndex = data.batchIndex;
+        const results = data.translatedResults;
+
         try {
-            const doc = new PDFDocument();
-            doc.pipe(fs.createWriteStream(outFile));
-            doc.fontSize(10)
-                .font(FONT_PATH)
-                .text(generatedPDFText, 50, 50);
-            doc.end();
-            console.log('PDF created');
+            console.log(`Processing batch ${batchIndex} with ${results.length} items.`);
+
+            // Xử lý từng kết quả trong batch
+            for (const item of results) {
+                const { fileName, translatedText } = item;
+
+                // Lấy tên file không chứa phần mở rộng
+                const fileNameWithoutExtension = path.parse(fileName).name;
+                const outFile = `./server/output/${fileNameWithoutExtension}.pdf`;
+
+                // Tạo file PDF
+                const doc = new PDFDocument();
+                doc.pipe(fs.createWriteStream(outFile));
+                doc.fontSize(10)
+                    .font(FONT_PATH)
+                    .text(translatedText, 50, 50);
+                doc.end();
+
+                console.log(`PDF created for file: ${fileName}`);
+            }
+
+            console.log(`Batch ${batchIndex} processed successfully.`);
         } catch (error) {
-            console.error('Lỗi khi tạo PDF', error);
+            console.error(`Error processing batch ${batchIndex}:`, error);
+            throw error;
         }
     }
 }
+
+// Chạy Pdf Filter
 async function run() {
     const pdfFilter = new PdfFilter();
-    await pdfFilter.connectPipes();
-    await pdfFilter.run();
+    await pdfFilter.connectPipes(); // Kết nối với queue
+    await pdfFilter.run(); // Bắt đầu xử lý
 }
-run().then(r => console.log('PdfFilter is running'));
+run().then(() => console.log('PdfFilter is running.'));
