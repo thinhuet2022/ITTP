@@ -1,40 +1,30 @@
-const kafka = require('kafka-node');
-const Translate  = require('open-google-translator');
+const KafkaManager = require("./KafkaManagement");
+const {PARTITION_1, CONSUMER_OPTIONS, PARTITION_2, TRANSLATE_TOPIC, PDF_TOPIC} = require("../constant/constant");
+const {processTranslate} = require("../utils/translate");
 
-// Kafka Consumer setup
-const kafkaClient = new kafka.KafkaClient({ kafkaHost: 'localhost:9092' });
-const consumer = new kafka.Consumer(kafkaClient, [{ topic: 'translate', partition: 0 }], { autoCommit: true });
-const producer = new kafka.Producer(kafkaClient);
+const kafkaInstance = new KafkaManager({kafkaHost: 'localhost:9092'});
 
-producer.on('ready', () => console.log('Kafka Producer for Translate is ready.'));
-producer.on('error', (err) => console.error('Kafka Producer error:', err));
+kafkaInstance.startProducer('PDF');
 
+kafkaInstance.addConsumer('translate', 'translate-consumer-group', CONSUMER_OPTIONS);
+
+const consumer = kafkaInstance.consumers.pop();
+
+let count = 0;
 consumer.on('message', async (message) => {
-  //  console.log('Translate Consumer received message:', message);
-
+    console.log('Translate Consumer processing task');
+    const startTime = process.hrtime();
     try {
-        const data = JSON.parse(message.value);
-        // const [translatedText] = await translate.translate(data.text, 'vi');
-        const translatedText = await Translate.TranslateLanguageData({
-            listOfWordsToTranslate: [data.text], // Văn bản cần dịch
-            fromLanguage: "en", // Dịch từ tiếng Anh
-            toLanguage: "vi", // Sang tiếng Việt
-        });
-        const translateMessage = {
-            fileName: data.fileName,
-            text: translatedText[0].translation,
-        };
-
-        // Gửi kết quả dịch tới topic `pdf`
-        producer.send(
-            [{ topic: 'pdf', messages: JSON.stringify(translateMessage) }],
-            (err, data) => {
-                if (err) console.error('Error sending translated text:', err);
-                else console.log(`Sent translated text for ${translateMessage.fileName} to topic pdf.`);
-            }
-        );
-    } catch (error) {
+        const translateMessage = await processTranslate(message);
+        kafkaInstance.sendMessage('pdf', translateMessage, PARTITION_1);
+    }
+    catch (error) {
         console.error('Error processing translation:', error);
+    }
+    finally {
+        const endTime = process.hrtime(startTime);
+        count++;
+        console.log(`Translate time for task ${count} is: ${endTime[0]}s ${(endTime[1] / 1e6).toFixed(0)}ms`);
     }
 });
 

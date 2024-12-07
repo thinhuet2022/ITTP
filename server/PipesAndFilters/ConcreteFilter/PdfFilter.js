@@ -2,7 +2,7 @@ const Sink = require('../Abstract/Sink');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
-const FONT_PATH = './server/font/Roboto-Bold.ttf';
+const FONT_PATH = './server/font/Roboto-Regular.ttf';
 
 class PdfFilter extends Sink {
     constructor() {
@@ -18,8 +18,7 @@ class PdfFilter extends Sink {
         const results = data.translatedResults;
 
         try {
-            console.log(`Processing batch ${batchIndex} with ${results.length} items.`);
-
+            const startTime = process.hrtime();
             // Xử lý từng kết quả trong batch
             for (const item of results) {
                 const { fileName, translatedText } = item;
@@ -35,7 +34,8 @@ class PdfFilter extends Sink {
                     .font(FONT_PATH)
                     .text(translatedText, 50, 50);
                 doc.end();
-
+                const endTime = process.hrtime(startTime);
+                console.log(`PDF created for file: ${fileName} in ${endTime[0]}s ${endTime[1] / 1000000}ms`);
                 console.log(`PDF created for file: ${fileName}`);
             }
 

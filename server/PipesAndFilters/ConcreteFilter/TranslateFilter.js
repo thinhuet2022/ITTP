@@ -13,8 +13,7 @@ class TranslateFilter extends IntermediateFilter {
      */
     async process(data) {
         try {
-            console.log(`Processing translation for batch: ${data.batchIndex}`);
-
+            const startTime = process.hrtime();
             // Sử dụng Promise.all để dịch song song tất cả văn bản
             const translatedResults = await Promise.all(
                 data.results.map(async (item) => {
@@ -38,6 +37,8 @@ class TranslateFilter extends IntermediateFilter {
             };
 
             console.log(`Batch ${data.batchIndex} translated successfully.`);
+            const endTime = process.hrtime(startTime);
+            console.log(`Batch ${data.batchIndex} processed in ${endTime[0]}s ${endTime[1] / 1000000}ms`);
             return Buffer.from(JSON.stringify(output));
         } catch (error) {
             console.error('Error during translation processing:', error);

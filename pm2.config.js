@@ -1,18 +1,18 @@
 module.exports = {
     apps: [
         {
-            name: "OcrFilter",
-            script: "./server/PipesAndFilters/ConcreteFilter/OcrFilter.js",
-            instances: 5, // Chạy 3 instance song song
+            name: "OcrConsumer",
+            script: "./server/KafkaPipeline/OcrConsumer.js",
+            instances: 3, // Chạy 3 instance song song
         },
         {
-            name: "TranslateFilter",
-            script: "./server/PipesAndFilters/ConcreteFilter/TranslateFilter.js",
-            instances: 3,////]\y 3 instance song song
+            name: "TranslateConsumer",
+            script: "./server/KafkaPipeline/TranslateConsumer.js",
+            instances: 2,////]\y 3 instance song song
         },
         {
-            name: "PdfFilter",
-            script: "./server/PipesAndFilters/ConcreteFilter/PdfFilter.js",
+            name: "PdfConsumer",
+            script: "./server/KafkaPipeline/PdfConsumer.js",
             instances: 2, // Chạy 3 instance song song
         },
     ],

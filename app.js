@@ -45,6 +45,7 @@ app.post('/upload', upload.array('file'), async (req, res) => {
     }
     const startTime = process.hrtime();
     try {
+        let partitionCounter = 0;
 
         // Gửi từng file ảnh vào Kafka topic `ocr`
         imageFiles.forEach((file) => {
@@ -59,8 +60,9 @@ app.post('/upload', upload.array('file'), async (req, res) => {
                 filePath: filePath, // Gửi đường dẫn file thay vì buffer
             };
 
+            partitionCounter = partitionCounter % 3;
             producer.send(
-                [{ topic: 'ocr', messages: JSON.stringify(message) }],
+                [{ topic: 'ocr_topic', messages: JSON.stringify(message), partition: partitionCounter }],
                 (err, data) => {
                     if (err) {
                         console.error(`Error sending message for ${file.originalname}:`, err);
@@ -69,6 +71,7 @@ app.post('/upload', upload.array('file'), async (req, res) => {
                     }
                 }
             );
+            partitionCounter++;
         });
         const watcher = chokidar.watch(OUTPUT_PATH, { ignoreInitial: true });
         let pdfCount = 0;

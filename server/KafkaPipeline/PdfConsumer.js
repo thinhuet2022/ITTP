@@ -1,38 +1,29 @@
-const kafka = require('kafka-node');
-const fs = require('fs');
-const PDFDocument = require('pdfkit');
-const path = require('path');
-const FONT_PATH = './server/font/Roboto-Regular.ttf';
+const {CONSUMER_OPTIONS, PDF_TOPIC} = require("../constant/constant");
+const KafkaManager = require("./KafkaManagement");
+const {processPdf} = require("../utils/pdf");
 
-const OUTPUT_PATH = path.resolve('output');
+const kafkaInstance = new KafkaManager({kafkaHost: 'localhost:9092'});
 
-// Kafka Consumer setup
-const kafkaClient = new kafka.KafkaClient({ kafkaHost: 'localhost:9092' });
-const consumer = new kafka.Consumer(kafkaClient, [{ topic: 'pdf', partition: 0 }], { autoCommit: true });
+kafkaInstance.addConsumer('pdf', 'pdf-consumer-group', CONSUMER_OPTIONS);
 
+let count = 0;
+const consumer = kafkaInstance.consumers.pop();
 consumer.on('message', async (message) => {
-   // console.log('PDF Consumer received message:', message);
-
-    try {
-        const data = JSON.parse(message.value);
-        const { fileName, text } = data;
-
-        // Lấy tên file không chứa phần mở rộng
-        const fileNameWithoutExtension = path.parse(fileName).name;
-        const outFile = `./server/output/${fileNameWithoutExtension}.pdf`;
-
-        // Tạo file PDF
-        const doc = new PDFDocument();
-        doc.pipe(fs.createWriteStream(outFile));
-        doc.fontSize(10)
-            .font(FONT_PATH)
-            .text(text, 50, 50);
-        doc.end();
-
-        console.log(`PDF created for file: ${fileName}`);
-    } catch (error) {
-        console.error('Error creating PDF:', error);
+    console.log('PDF Consumer processing task');
+    const startTime = process.hrtime();
+    try{
+        await processPdf(message);
+    }
+    catch (error){
+        console.error('Error processing PDF:', error);
+    }
+    finally {
+        const endTime = process.hrtime(startTime);
+        count++;
+        console.log(`PDF time for task ${count} is: ${endTime[0]}s ${(endTime[1] / 1e6).toFixed(1)}ms`);
     }
 });
 
 consumer.on('error', (err) => console.error('PDF Consumer error:', err));
+
+console.log('PDF Consumer is running...');
