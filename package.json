@@ -26,15 +26,17 @@
     "archiver": "^7.0.1",
     "chokidar": "^4.0.1",
     "express": "^4.21.1",
+    "kafka-node": "^5.0.0",
     "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
+    "node-tesseract-ocr": "^2.2.1",
+    "open-google-translator": "^1.0.5",
     "pdfkit": "^0.15.1",
+    "pm2": "^5.4.3",
     "react-toastify": "^10.0.6",
-    "tesseract.js": "^5.1.1",
-    "pm2": "^5.4.3"
+    "tesseract.js": "^5.1.1"
   },
   "devDependencies": {
     "cors": "^2.8.5"
-
   }
 }
