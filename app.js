@@ -3,13 +3,11 @@ const multer = require('multer');
 const kafka = require('kafka-node');
 const cors = require('cors');
 const path = require('path');
-const os = require('os');
 const archiver = require('archiver');
 const chokidar = require('chokidar');
-// const path = require('path');
  const fs = require('fs/promises');
-// const archiver = require('archiver');
-// const chokidar = require('chokidar');
+const {OCR_TOPIC, NUMBER_OF_OCR_CONSUMER} = require("./server/constant/constant");
+
 
 const app = express();
 const port = 5000;
@@ -60,9 +58,9 @@ app.post('/upload', upload.array('file'), async (req, res) => {
                 filePath: filePath, // Gửi đường dẫn file thay vì buffer
             };
 
-            partitionCounter = partitionCounter % 3;
+            partitionCounter = partitionCounter % NUMBER_OF_OCR_CONSUMER;
             producer.send(
-                [{ topic: 'ocr_topic', messages: JSON.stringify(message), partition: partitionCounter }],
+                [{ topic: OCR_TOPIC, messages: JSON.stringify(message), partition: partitionCounter }],
                 (err, data) => {
                     if (err) {
                         console.error(`Error sending message for ${file.originalname}:`, err);
@@ -144,161 +142,6 @@ app.get('/download', async (req, res) => {
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
