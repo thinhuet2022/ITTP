@@ -6,22 +6,18 @@ class IntermediateFilter extends Filter {
      *
      * @param {string} inPipe
      * @param {string} outPipe
-     * @param prefetchNumber
      */
-    constructor(inPipe, outPipe, prefetchNumber = 1) {
+    constructor(inPipe, outPipe) {
         super();
         this.pipes = [inPipe, outPipe];
         this.inPipe = inPipe;
         this.outPipe = outPipe;
         this.numberOfTask = 0;
-        this.prefetchNumber = prefetchNumber;
     }
 
     receive(message) {
         try {
-            const data = JSON.parse(message.content.toString());
-         //   console.log('Received message:', data); // Kiểm tra xem dữ liệu nhận được có đúng định dạng không
-            return data;
+            return JSON.parse(message.content.toString());
         } catch (error) {
             console.error("Error occured when reading message from " + this.inPipe + ": ", error);
         }

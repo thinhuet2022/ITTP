@@ -1,39 +1,28 @@
 const IntermediateFilter = require('../Abstract/IntermediateFilter');
-const ocr = require('tesseract.js');
+const ocr = require('node-tesseract-ocr');
 
 class OcrFilter extends IntermediateFilter {
     constructor() {
-        super("ocr", "translate", 3); // Số lượng prefetch
+        super("ocr", "translate");
     }
 
-    /**
-     *
-     * @param {object} data - {fileName, buffer}
-     */
     async process(data) {
+        const startTime = process.hrtime();
         try {
-            const startTime = process.hrtime();
-            console.log(`Processing batch number: ${data.batchIndex}`);
-            const results = [];
-
-            for ( const image of data.images) {
-                const { data : {text}} = await ocr.recognize(image.buffer.data, 'eng');
-                const output = {
-                    fileName: image.fileName,
-                    englishText: text.trim(),
-                }
-                results.push(output);
+            const result = await ocr.recognize(data.filePath, { lang: 'eng', oem: 3, psm: 6 });
+            if (!result || result.trim() === '') {
+                throw new Error(`OCR did not return any text for file: ${data.fileName}`);
             }
-            const output = {
-                batchIndex:  data.batchIndex,
-                results,
-            }
-            const endTime = process.hrtime(startTime);
-            console.log(`Batch ${data.batchIndex} processed in ${endTime[0]}s ${endTime[1] / 1000000}ms`);
-            return Buffer.from(JSON.stringify(output));
+            return Buffer.from(JSON.stringify({
+                fileName: data.fileName,
+                englishText: result,
+            }));
         } catch (error) {
             console.error('Error during OCR processing:', error);
-            throw error;  // Đảm bảo lỗi được ném lại để quản lý tiếp
+            throw error;
+        } finally {
+            const elapsedTime = process.hrtime(startTime);
+            console.log(`OcrFilter: Processed ${data.fileName} in ${elapsedTime[0]}s ${(elapsedTime[1] / 1e6).toFixed(0)}ms`);
         }
     }
 }

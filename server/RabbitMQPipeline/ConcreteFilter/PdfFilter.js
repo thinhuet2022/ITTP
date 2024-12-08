@@ -6,51 +6,33 @@ const FONT_PATH = './server/font/Roboto-Regular.ttf';
 
 class PdfFilter extends Sink {
     constructor() {
-        super("pdf", 3); // Tên queue là "pdf", prefetch là 3
+        super("pdf");
     }
 
-    /**
-     *
-     * @param {object} data - { batchIndex, translatedResults: [{fileName, translatedText}] }
-     */
     async process(data) {
-        const batchIndex = data.batchIndex;
-        const results = data.translatedResults;
-
+        const startTime = process.hrtime();
+        const generatedPDFText = data.translatedText;
+        const fileNameWithoutExtension = path.parse(data.fileName).name;
+        const outFile = './server/output/' + fileNameWithoutExtension + '.pdf';
         try {
-            const startTime = process.hrtime();
-            // Xử lý từng kết quả trong batch
-            for (const item of results) {
-                const { fileName, translatedText } = item;
-
-                // Lấy tên file không chứa phần mở rộng
-                const fileNameWithoutExtension = path.parse(fileName).name;
-                const outFile = `./server/output/${fileNameWithoutExtension}.pdf`;
-
-                // Tạo file PDF
-                const doc = new PDFDocument();
-                doc.pipe(fs.createWriteStream(outFile));
-                doc.fontSize(10)
-                    .font(FONT_PATH)
-                    .text(translatedText, 50, 50);
-                doc.end();
-                const endTime = process.hrtime(startTime);
-                console.log(`PDF created for file: ${fileName} in ${endTime[0]}s ${endTime[1] / 1000000}ms`);
-                console.log(`PDF created for file: ${fileName}`);
-            }
-
-            console.log(`Batch ${batchIndex} processed successfully.`);
+            const doc = new PDFDocument();
+            doc.pipe(fs.createWriteStream(outFile));
+            doc.fontSize(10)
+                .font(FONT_PATH)
+                .text(generatedPDFText, 50, 50);
+            doc.end();
+            const elapsedTime = process.hrtime(startTime);
+            console.log(`PdfFilter: Processed ${data.fileName} in ${elapsedTime[0]}s ${(elapsedTime[1] / 1e6).toFixed(0)}ms`);
         } catch (error) {
-            console.error(`Error processing batch ${batchIndex}:`, error);
+            console.error('Error during PDF creation:', error);
             throw error;
         }
     }
 }
 
-// Chạy Pdf Filter
 async function run() {
     const pdfFilter = new PdfFilter();
-    await pdfFilter.connectPipes(); // Kết nối với queue
-    await pdfFilter.run(); // Bắt đầu xử lý
+    await pdfFilter.connectPipes();
+    await pdfFilter.run();
 }
 run().then(() => console.log('PdfFilter is running.'));
