@@ -6,14 +6,12 @@ class Filter {
 
     constructor() {
         this.pipes = [];
-        this.prefetchNumber = 3;
     }
     
     async connectRabbitMQ() {
         try {
             const connection = await amqp.connect('amqp://127.0.0.1');
             const channel = await connection.createChannel();
-            channel.prefetch(5, false);
             return [connection, channel];
         } catch(error) {
             console.log(error.message);

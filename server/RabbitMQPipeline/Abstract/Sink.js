@@ -4,14 +4,12 @@ class Sink extends Filter {
     /**
      *
      * @param {string} inPipe - tên input pipe
-     * @param prefetchNumber
      */
-    constructor(inPipe, prefetchNumber = 1) {
+    constructor(inPipe) {
         super();
         this.pipes = [inPipe];
         this.inPipe = inPipe;
         this.numberOfTask = 0;
-        this.prefetchNumber = prefetchNumber;
     }
 
     receive(message) {

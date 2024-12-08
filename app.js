@@ -166,8 +166,15 @@ app.listen(port, () => {
 // const OUTPUT_PATH = path.resolve("server/output");
 // const UPLOAD_PATH = path.resolve("uploads");
 //
-// // Cấu hình multer để lưu file vào RAM (memory)
-// const storage = multer.memoryStorage();
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         const uploadPath = path.join(__dirname, 'uploads');
+//         cb(null, uploadPath);
+//     },
+//     filename: (req, file, cb) => {
+//         cb(null, file.originalname); // Tạo tên file duy nhất
+//     }
+// });
 // const upload = multer({ storage });
 //
 // // Hàm đọc tất cả file trong thư mục (đệ quy, bất đồng bộ)
@@ -202,27 +209,18 @@ app.listen(port, () => {
 //     await channel.assertQueue('ocr', { durable: true });
 //
 //     try {
-//         // Gom nhóm ảnh thành các batch
-//         const batches = [];
-//         for (let i = 0; i < imageFiles.length; i += BATCH_SIZE) {
-//             const batch = imageFiles.slice(i, i + BATCH_SIZE).map((imageFile) => {
-//                 if (!imageFile.buffer || imageFile.buffer.length === 0) {
-//                     throw new Error(`Invalid image buffer for file: ${imageFile.originalname}`);
-//                 }
-//                 console.log(`Preparing file: ${imageFile.originalname}`);
-//                 return {
-//                     fileName: imageFile.originalname,
-//                     buffer: imageFile.buffer, // Dữ liệu ảnh được lưu trong RAM (buffer)
-//                 };
-//             });
-//             batches.push(batch);
-//         }
-//         // Gửi từng batch vào queue
+//         // Xử lý từng ảnh và gửi thẳng vào queue
 //         await Promise.all(
-//             batches.map((batch, index) => {
-//                 console.log(`Sending batch ${index + 1} to queue...`);
-//                 const batchPayload = { batchIndex: index + 1, images: batch }; // Đính kèm thông tin lô
-//                 channel.sendToQueue('ocr', Buffer.from(JSON.stringify(batchPayload)));
+//             imageFiles.map(async (imageFile) => {
+//                 const filePath = path.join(__dirname, 'uploads', imageFile.filename);
+//
+//
+//                 console.log(`Sending file: ${imageFile.originalname} to Ocr queue...`);
+//                 const payload = {
+//                     fileName: imageFile.originalname,
+//                     filePath: filePath,
+//                 };
+//                 channel.sendToQueue('ocr', Buffer.from(JSON.stringify(payload)));
 //             })
 //         );
 //
@@ -237,8 +235,10 @@ app.listen(port, () => {
 //                 if (pdfCount === imageFiles.length) {
 //                     console.log('All PDFs processed!');
 //                     const endTime = process.hrtime(startTime);
-//                     console.log(`Thời gian cần để chạy 1 job là: ${endTime[0]}s ${endTime[1] / 1e6}ms `);
+//                     console.log(`Thời gian cần để xử lý ${imageFiles.length} ảnh là: ${endTime[0]}s ${endTime[1] / 1e6}ms `);
 //                     res.status(200).json({ message: 'Processing completed. Ready to download.' });
+//                     await fs.rm(UPLOAD_PATH, { recursive: true, force: true });
+//                     await fs.mkdir(UPLOAD_PATH);
 //                     watcher.close();
 //                 }
 //             }
