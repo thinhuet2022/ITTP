@@ -66,7 +66,8 @@ $ npm install
 ### Sử dụng
 Với Kafka, uncomment trong file `app.js` từ dòng 1 tới 150, comment từ dòng 152:  
 ```sh
-# chạy backend trong thư mục gốc(cấu hình mặc định là OCR Filter chạy 3 consumer, có thể thay đổi trong file pm2.config.js)
+# chạy backend trong thư mục gốc(cấu hình mặc định là OCR Filter chạy 3 consumer
+# có thể thay đổi trong file pm2.config.js)
 $ npm start
 ```
 
