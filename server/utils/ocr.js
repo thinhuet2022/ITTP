@@ -6,10 +6,12 @@ const config = {
 };
 async function processOcr(message) {
     try {
+        const startTime = process.hrtime();
         const data = JSON.parse(message.value);
         const imagePath = data.filePath;
         const text = await tesseract.recognize(imagePath, config);
         return {
+            endTime: process.hrtime(startTime),
             fileName: data.fileName,
             text: text,
             key: data.fileName,
