@@ -10,9 +10,11 @@ const {OCR_TOPIC, NUMBER_OF_OCR_CONSUMER} = require("./server/constant/constant"
 
 
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 5000;
+app.use(express.static(path.join(__dirname, 'out')));
+
+
 const OUTPUT_PATH = path.resolve("server/output");
-const UPLOAD_PATH = path.resolve("uploads");
 // Kafka Producer setup
 const kafkaClient = new kafka.KafkaClient({ kafkaHost: 'localhost:9092' });
 const producer = new kafka.Producer(kafkaClient);
@@ -47,7 +49,7 @@ app.post('/upload', upload.array('file'), async (req, res) => {
 
         // Gửi từng file ảnh vào Kafka topic `ocr`
         imageFiles.forEach((file) => {
-            const filePath = path.join(__dirname, 'uploads', file.filename); // Đường dẫn đầy đủ tới file đã lưu
+            const filePath = path.join(__dirname, 'uploads', file.filename);
 
             console.log(`File ${file.originalname} saved at ${filePath}`);
 
@@ -55,7 +57,7 @@ app.post('/upload', upload.array('file'), async (req, res) => {
             const message = {
                 key: file.originalname,
                 fileName: file.originalname,
-                filePath: filePath, // Gửi đường dẫn file thay vì buffer
+                filePath: filePath,
             };
 
             partitionCounter = partitionCounter % NUMBER_OF_OCR_CONSUMER;
@@ -138,14 +140,13 @@ app.get('/download', async (req, res) => {
         res.status(500).json({ message: 'Error during download process', error });
     }
 });
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'out', 'index.html'));
+});
 // Start the server
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
-
-
-
-
 
 // const express = require('express');
 // const amqp = require('amqplib');
@@ -158,6 +159,7 @@ app.listen(port, () => {
 //
 // const app = express();
 // const port = 5000;
+// app.use(express.static(path.join(__dirname, 'out')));
 // app.use(cors());
 // const BATCH_SIZE = 1;
 //
@@ -223,21 +225,6 @@ app.listen(port, () => {
 //                 channel.sendToQueue('ocr', Buffer.from(JSON.stringify(batchPayload)));
 //             })
 //         );
-//         // await Promise.all(
-//         //     imageFiles.map((imageFile) => {
-//         //         console.log(`Received file: ${imageFile.originalname}`);
-//         //         console.log(`Buffer length: ${imageFile.buffer.length}`);
-//         //         const output = {
-//         //             fileName: imageFile.originalname,
-//         //             buffer: imageFile.buffer,  // Dữ liệu ảnh được lưu trong RAM (buffer)
-//         //         };
-//         //         if (!imageFile.buffer || imageFile.buffer.length === 0) {
-//         //             throw new Error('Invalid image buffer');
-//         //         }
-//         //         channel.sendToQueue('ocr', Buffer.from(JSON.stringify(output)));
-//         //         console.log(`Sent to queue: ${imageFile.originalname}`);
-//         //     })
-//         // );
 //
 //         const watcher = chokidar.watch(OUTPUT_PATH, { ignoreInitial: true });
 //         let pdfCount = 0;
@@ -305,6 +292,9 @@ app.listen(port, () => {
 //     }
 // });
 //
+// app.get('*', (req, res) => {
+//     res.sendFile(path.join(__dirname, 'out', 'index.html'));
+// });
 // // Khởi động server
 // app.listen(port, () => {
 //     console.log(`App listening on port ${port}`);

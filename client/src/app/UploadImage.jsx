@@ -48,15 +48,6 @@ function App() {
         setFile(null);
         setPreviewImages([]);
     };
-    const scrollLeft = () => {
-        const container = document.querySelector(".overflow-x-scroll");
-        container.scrollBy({ left: -150, behavior: "smooth" });
-    };
-
-    const scrollRight = () => {
-        const container = document.querySelector(".overflow-x-scroll");
-        container.scrollBy({ left: 150, behavior: "smooth" });
-    };
     const handleRemoveImage = (index) => {
         const updatedFiles = Array.from(file).filter((_, i) => i !== index);
         setFile(updatedFiles);
