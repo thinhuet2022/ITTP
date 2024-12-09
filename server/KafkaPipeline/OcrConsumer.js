@@ -1,8 +1,6 @@
 const KafkaManager = require("./KafkaManagement");
 const {PARTITION_1, CONSUMER_OPTIONS, PARTITION_2, OCR_TOPIC, TRANSLATE_TOPIC} = require("../constant/constant");
 const processOcr = require("../utils/ocr");
-const Queue = require('p-queue').default; // Thư viện quản lý queue
-const queue = new Queue({ concurrency: 10 }); // Giới hạn 4 message đồng thời
 
 const kafkaInstance = new KafkaManager({kafkaHost: 'localhost:9092'});
 
