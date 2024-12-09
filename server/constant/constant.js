@@ -6,7 +6,7 @@ const CONSUMER_OPTIONS = {
     protocol: ['roundrobin'],
     autoCommit: true,
 };
-const OCR_TOPIC = 'ocr';
+const OCR_TOPIC = 'ocr-topic';
 const TRANSLATE_TOPIC = 'translate';
 const PDF_TOPIC = 'pdf';
 const NUMBER_OF_OCR_CONSUMER = 3;
